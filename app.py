@@ -23,7 +23,7 @@ st.markdown("Simple Streamlit Web App for quick data clean up and vizualization"
 # ================================================
 # Sidebar Controls
 # ================================================
-st.sidebar.header("Data Handling")
+st.sidebar.header("Data Upload")
 
 uploaded_file = st.sidebar.file_uploader("Upload a CSV", type="csv")
 
@@ -53,8 +53,6 @@ if "df" not in st.session_state:
 # ================================================
 # Data Cleaning / Preprocessing
 # ================================================
-
-
 
 # Show columns with missing values only
 if st.sidebar.button("Reset"):
@@ -98,12 +96,43 @@ st.dataframe(df)
 # ================================================
 # Visualization
 # ================================================
-st.subheader("Sample Plot")
-fig = px.line(df, x='A', y='B', title="Line Chart")
-st.plotly_chart(fig, use_container_width=True)
+st.sidebar.subheader("Data Visualization")
+
+plot_types = ["Histogram", "Scatter", "Bar Graph"]
+fig = None
+plot_title = "### Choose a Plot Type and Columns to create a graph"
+
+selected_plot = st.sidebar.selectbox("Select Plot Type", plot_types, index=None)
+
+
+
+match selected_plot:
+    case "Histogram":
+        x_column = st.sidebar.selectbox("Select Column to Plot Histogram", df.columns)
+        legends_column = st.sidebar.selectbox("Select Column for Legend", df.columns.drop(x_column))
+        plot_title = f"### Distribution of `{x_column}` by `{legends_column}`"
+        fig = px.histogram(df, x=x_column, color=legends_column)
+    case "Scatter":
+        x_column = st.sidebar.selectbox("Select X Column", df.columns)
+        y_column = st.sidebar.selectbox("Select Y Column", df.columns.drop(x_column))
+        legends_column = st.sidebar.selectbox("Select Column for Legend", df.columns.drop([x_column, y_column]), index=None)
+        plot_title = f"### Scatter Plot of `{y_column}` vs `{x_column}`"
+        fig = px.scatter(df, x=x_column, y=y_column, color=legends_column)
+    case "Bar Graph":
+        x_column = st.sidebar.selectbox("Select X Column", df.columns)
+        y_column = st.sidebar.selectbox("Select Y Column", df.columns.drop(x_column))
+        legends_column = st.sidebar.selectbox("Select Column for Legend", df.columns.drop([x_column, y_column]), index=None)
+        plot_title = f"### Bar Graph of `{y_column}` vs `{x_column}`"
+        fig = px.bar(df, x=x_column, y=y_column, color=legends_column)        
+
+        
+
+st.markdown(plot_title)
+if fig is not None:
+    st.plotly_chart(fig, use_container_width=True)
 
 # ================================================
 # Footer or Additional Info
 # ================================================
 st.markdown("---")
-st.markdown("Made with ❤️ using Streamlit")
+st.markdown("Made by AlonsoUR🦉 using Streamlit")
