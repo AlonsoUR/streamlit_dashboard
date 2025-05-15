@@ -1,60 +1,109 @@
 # ================================================
 # Imports
 # ================================================
-import pandas as pd
 import streamlit as st
+import pandas as pd
 import plotly.express as px
 
 # ================================================
-# Constants and Global Variables
+# Page Configuration
 # ================================================
-
-
-# ================================================
-# Data Loading and Preprocessing
-# ================================================
-#load data set
-vehicles = pd.read_csv("C:/Git/streamlit_dashboard/vehicles_us.csv")
-
-#remove and fill NaN's
-vehicles = vehicles.dropna(subset=["model_year","cylinders","odometer"])
-vehicles["paint_color"] = vehicles["paint_color"].fillna("unkown")
-vehicles["is_4wd"] = vehicles["is_4wd"].fillna(0) 
-
-#change data types  
-vehicles["model_year"] = vehicles["model_year"].astype("int32")
-vehicles["cylinders"] = vehicles["cylinders"].astype("int32")
-vehicles["odometer"] = vehicles["odometer"].astype("int64")
-vehicles["is_4wd"] = vehicles["is_4wd"].astype("bool")
-vehicles["date_poset"] = vehicles["date_posted"].astype("datetime64[ns]")
-
-
-#vehicles.info()
-
+st.set_page_config(
+    page_title="Streamlit Data Viewer",
+    page_icon="📊",
+    layout="wide"
+)
 
 # ================================================
-# Helper Functions
+# App Title and Description
 # ================================================
+st.title("Streamlit Quick Data Viewer")
+st.markdown("Simple Streamlit Web App for quick data clean up and vizualization")
+
+# ================================================
+# Sidebar Controls
+# ================================================
+st.sidebar.header("Data Handling")
+
+uploaded_file = st.sidebar.file_uploader("Upload a CSV", type="csv")
+
+
+st.sidebar.header("NA Values Handler")
 
 
 # ================================================
-# Streamlit UI Layout and Widgets
+# Data Loading
 # ================================================
+sample_file = ("vehicles_us.csv")
+
+@st.cache_data
+def load_data(file):
+    if file == None:
+        df = pd.read_csv(sample_file)
+        st.sidebar.markdown("Using Sample Vehicle Sales Data. Upload a CSV File to begin data visualization")
+    else:
+        df = pd.read_csv(file)
+    return df
+
+
+if "df" not in st.session_state:
+    st.session_state.df = load_data(uploaded_file)
 
 
 # ================================================
-# Data Visualization
+# Data Cleaning / Preprocessing
 # ================================================
 
 
-# ================================================
-# Main Execution Logic
-# ================================================
+
+# Show columns with missing values only
+if st.sidebar.button("Reset"):
+    st.session_state.df = load_data(uploaded_file)
+
+df = st.session_state.df
+na_columns = df.columns[df.isna().any()].tolist()
+
+if na_columns:
+    selected_columns = st.sidebar.multiselect("Select columns with missing values", na_columns)
+
+    action = st.sidebar.radio("Choose action", ("Drop rows with NA", "Fill NA with value"))
+
+    if action == "Fill NA with value":
+        fill_value = st.sidebar.text_input("Value to fill NA with", value="0")
+
+def clean_data(df):
+    clean_df = df.copy()
+
+    if na_columns and selected_columns:
+        if action == "Drop rows with NA":
+            clean_df.dropna(subset=selected_columns, inplace=True)
+        elif action == "Fill NA with value":
+            clean_df[selected_columns] = clean_df[selected_columns].fillna(fill_value)
+
+    return clean_df
+
+if st.sidebar.button("Clean"):
+    st.session_state.df = clean_data(st.session_state.df)
 
 
 # ================================================
-# Entry Point
+# Data Display
 # ================================================
-if __name__ == "__main__":
-    pass
+df = st.session_state.df
+st.subheader("Raw Data")
+st.dataframe(df)
 
+
+
+# ================================================
+# Visualization
+# ================================================
+st.subheader("Sample Plot")
+fig = px.line(df, x='A', y='B', title="Line Chart")
+st.plotly_chart(fig, use_container_width=True)
+
+# ================================================
+# Footer or Additional Info
+# ================================================
+st.markdown("---")
+st.markdown("Made with ❤️ using Streamlit")
