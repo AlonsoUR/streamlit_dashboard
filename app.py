@@ -18,7 +18,7 @@ st.set_page_config(
 # App Title and Description
 # ================================================
 st.title("Streamlit Quick Data Viewer")
-st.markdown("Simple Streamlit Web App for quick data clean up and vizualization")
+st.markdown("Simple Streamlit Web App for simple data vizualization")
 
 # ================================================
 # Sidebar Controls
